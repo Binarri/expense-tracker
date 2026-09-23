@@ -456,7 +456,9 @@ const s: Record<string, React.CSSProperties> = {
   filterButton: {
     padding: "7px 14px",
     borderRadius: 20,
-    border: "1px solid #2a2a2e",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "#2a2a2e",
     backgroundColor: "transparent",
     color: "#a1a1aa",
     fontSize: 13,
