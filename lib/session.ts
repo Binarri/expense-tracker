@@ -22,7 +22,6 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     include: { user: true },
   });
 
-  // Cek session ada dan belum expired
   if (!session || session.expiresAt < new Date()) return null;
 
   return {
@@ -30,4 +29,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     name: session.user.name,
     email: session.user.email,
   };
+}
+
+/**
+ * Ambil ID user yang sedang login.
+ */
+export async function getCurrentUserId(): Promise<number | null> {
+  const user = await getCurrentUser();
+  return user?.id ?? null;
 }
