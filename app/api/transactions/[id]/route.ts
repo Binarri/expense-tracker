@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import {
   requireAuth,
@@ -24,7 +25,20 @@ export async function GET(
   try {
     const { id } = await params;
     const user = await requireAuth();
-    const transaction = await checkTransactionOwnership(Number(id), user.id);
+
+    const transactionId = Number(id);
+
+    if (Number.isNaN(transactionId)) {
+      return Response.json(
+        { error: "ID transaksi tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    const transaction = await checkTransactionOwnership(
+      transactionId,
+      user.id
+    );
 
     return Response.json({ data: transaction });
   } catch (error) {
@@ -32,63 +46,84 @@ export async function GET(
   }
 }
 
-// PUT /api/transactions/[id] — Update transaksi by ID
+// UPDATE — PUT /api/transactions/:id
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const transactionId = Number(id);
+
+    if (Number.isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "ID transaksi tidak valid" },
+        { status: 400 }
+      );
+    }
+
     const user = await requireAuth();
 
     // Cek kepemilikan sebelum update
-    await checkTransactionOwnership(Number(id), user.id);
+    await checkTransactionOwnership(transactionId, user.id);
 
     const body = await request.json();
+    const { type, amount, description, transactionDate } = body;
 
     // Validasi tipe transaksi
-    if (body.type && !["income", "expense"].includes(body.type)) {
-      return Response.json(
-        { error: "Jenis transaksi tidak valid (income/expense)" },
+    if (type && type !== "income" && type !== "expense") {
+      return NextResponse.json(
+        { error: "Jenis transaksi harus income atau expense" },
         { status: 400 }
       );
     }
 
     const updated = await prisma.transaction.update({
-      where: { id: Number(id) },
+      where: { id: transactionId },
       data: {
-        type: body.type,
-        amount: body.amount,
-        description: body.description,
-        transactionDate: body.transactionDate
-          ? new Date(body.transactionDate)
-          : undefined,
+        ...(type !== undefined && { type }),
+        ...(amount !== undefined && { amount }),
+        ...(description !== undefined && { description }),
+        ...(transactionDate !== undefined && {
+          transactionDate: new Date(transactionDate),
+        }),
       },
     });
 
-    return Response.json({ data: updated });
+    return NextResponse.json({ data: updated });
   } catch (error) {
     return authErrorResponse(error);
   }
 }
 
-// DELETE /api/transactions/[id] — Hapus transaksi by ID
+// DELETE — DELETE /api/transactions/:id
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const transactionId = Number(id);
+
+    if (Number.isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "ID transaksi tidak valid" },
+        { status: 400 }
+      );
+    }
+
     const user = await requireAuth();
 
     // Cek kepemilikan sebelum delete
-    await checkTransactionOwnership(Number(id), user.id);
+    await checkTransactionOwnership(transactionId, user.id);
 
     await prisma.transaction.delete({
-      where: { id: Number(id) },
+      where: { id: transactionId },
     });
 
-    return Response.json({ message: "Transaksi berhasil dihapus" });
+    return NextResponse.json({
+      message: "Transaksi dihapus",
+    });
   } catch (error) {
     return authErrorResponse(error);
   }
