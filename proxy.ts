@@ -8,7 +8,7 @@ import type { NextRequest } from "next/server";
  */
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionId = request.cookies.get("session_id")?.value;
+  const sessionId = request.cookies.get("sessionId")?.value;
 
   // Proteksi halaman dashboard — redirect ke /login kalau tidak ada cookie
   if (pathname.startsWith("/dashboard")) {

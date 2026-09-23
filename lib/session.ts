@@ -8,12 +8,12 @@ export type SessionUser = {
 };
 
 /**
- * Baca cookie session_id → query DB → return user yang login.
+ * Baca cookie sessionId → query DB → return user yang login.
  * Return null kalau tidak ada session / session expired.
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
-  const sessionId = cookieStore.get("session_id")?.value;
+  const sessionId = cookieStore.get("sessionId")?.value;
 
   if (!sessionId) return null;
 

@@ -1,3 +1,4 @@
+import LogoutButton from "./LogoutButton";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import prisma from "@/lib/prisma";
@@ -46,11 +47,15 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-slate-900 p-6 max-w-lg mx-auto">
 
       {/* Header: Greeting */}
-      <div className="mb-8 mt-4">
-        <h1 className="text-3xl font-bold text-white">
-          Halo, {user.name} 👋
-        </h1>
-        <p className="text-slate-400 mt-1 text-sm">{today}</p>
+      <div className="mb-8 mt-4 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white">
+            Halo, {user.name} 👋
+          </h1>
+          <p className="text-slate-400 mt-1 text-sm">{today}</p>
+        </div>
+
+        <LogoutButton />
       </div>
 
       {/* Summary Cards */}
