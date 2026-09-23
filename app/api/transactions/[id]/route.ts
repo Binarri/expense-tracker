@@ -5,23 +5,28 @@ import { getCurrentUserId } from '@/lib/session';
 // UPDATE — PUT /api/transactions/:id
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getCurrentUserId();
+  const { id } = await params;
+  const transactionId = Number(id);
 
+  if (Number.isNaN(transactionId)) {
+    return NextResponse.json({ error: 'ID transaksi tidak valid' }, { status: 400 });
+  }
+
+  const userId = await getCurrentUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Belum login' }, { status: 401 });
   }
 
   const existing = await prisma.transaction.findUnique({
-    where: { id: params.id },
+    where: { id: transactionId },
   });
 
   if (!existing) {
     return NextResponse.json({ error: 'Transaksi tidak ditemukan' }, { status: 404 });
   }
 
-  // Cek kepemilikan — ini bagian authorization yang wajib ada di tiap aksi
   if (existing.userId !== userId) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   }
@@ -34,7 +39,7 @@ export async function PUT(
   }
 
   const updated = await prisma.transaction.update({
-    where: { id: params.id },
+    where: { id: transactionId },
     data: {
       ...(type && { type }),
       ...(amount && { amount }),
@@ -49,16 +54,22 @@ export async function PUT(
 // DELETE — DELETE /api/transactions/:id
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const userId = await getCurrentUserId();
+  const { id } = await params;
+  const transactionId = Number(id);
 
+  if (Number.isNaN(transactionId)) {
+    return NextResponse.json({ error: 'ID transaksi tidak valid' }, { status: 400 });
+  }
+
+  const userId = await getCurrentUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Belum login' }, { status: 401 });
   }
 
   const existing = await prisma.transaction.findUnique({
-    where: { id: params.id },
+    where: { id: transactionId },
   });
 
   if (!existing) {
@@ -69,7 +80,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 403 });
   }
 
-  await prisma.transaction.delete({ where: { id: params.id } });
+  await prisma.transaction.delete({ where: { id: transactionId } });
 
   return NextResponse.json({ message: 'Transaksi dihapus' });
 }

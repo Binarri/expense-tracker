@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   const transaction = await prisma.transaction.create({
     data: {
-      userId, // <- diambil dari session, BUKAN dari body request
+      userId, 
       type,
       amount,
       description,
