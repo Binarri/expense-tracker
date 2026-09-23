@@ -10,8 +10,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Belum login' }, { status: 401 });
   }
 
+  const searchParams = request.nextUrl.searchParams;
+  const filterType = searchParams.get('type'); // 'income' | 'expense' | null
+
+  const whereClause: any = { userId };
+
+  if (filterType === 'income' || filterType === 'expense') {
+    whereClause.type = filterType;
+  }
+  // kalau filterType null atau nilainya selain income/expense, dianggap "semua", tidak ditambah kondisi type
+
   const transactions = await prisma.transaction.findMany({
-    where: { userId },
+    where: whereClause,
     orderBy: { transactionDate: 'desc' },
   });
 
