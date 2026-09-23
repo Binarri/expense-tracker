@@ -19,10 +19,9 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const totalIncome: Decimal = incomeResult._sum.amount ?? new Decimal(0);
-  const totalExpense: Decimal = expenseResult._sum.amount ?? new Decimal(0);
-  const balance: Decimal = totalIncome.minus(totalExpense);
-
+    const totalIncome = incomeResult._sum.amount ?? 0;
+    const totalExpense = expenseResult._sum.amount ?? 0;
+    const balance = Number(totalIncome) - Number(totalExpense);
   // 3. Query transaksi terbaru (5 terakhir) milik user ini SAJA
   const recentTransactions = await prisma.transaction.findMany({
     where: { userId: user.id },
