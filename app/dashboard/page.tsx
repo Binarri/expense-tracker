@@ -95,6 +95,16 @@ export default async function DashboardPage() {
         </div>
 
       </div>
+      
+      {/* Tombol transaksi */}
+      <div className="mb-6">
+        <a
+          href="/transactions"
+          className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-3 rounded-lg"
+        >
+          + Tambah / Kelola Transaksi
+        </a>
+      </div>
 
       {/* Transaksi Terbaru */}
       <h2 className="text-xl font-bold text-white mb-4">Transaksi Terbaru</h2>
