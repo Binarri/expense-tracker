@@ -18,9 +18,9 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 
-export async function POST(request: Request) {
+// GET: mengambil budget berdasarkan bulan dan tahun
+export async function GET(request: Request) {
   try {
-    // 1. Ambil user yang sedang login dari session
     const user = await getCurrentUser();
 
     if (!user) {
@@ -30,22 +30,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Ambil data dari request
-    const body = await request.json();
+    const { searchParams } = new URL(request.url);
 
-    const amount = Number(body.amount);
-    const month = Number(body.month);
-    const year = Number(body.year);
+    const month = Number(searchParams.get("month"));
+    const year = Number(searchParams.get("year"));
 
-    // 3. Validasi amount
-    if (!Number.isFinite(amount) || amount <= 0) {
-      return NextResponse.json(
-        { message: "Amount harus berupa angka lebih dari 0." },
-        { status: 400 }
-      );
-    }
-
-    // 4. Validasi month
     if (!Number.isInteger(month) || month < 1 || month > 12) {
       return NextResponse.json(
         { message: "Month harus berupa angka 1 sampai 12." },
@@ -53,7 +42,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Validasi year
     if (!Number.isInteger(year) || year < 2000) {
       return NextResponse.json(
         { message: "Year tidak valid." },
@@ -61,7 +49,79 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Buat budget baru atau update budget yang sudah ada
+    const budget = await prisma.budget.findUnique({
+      where: {
+        userId_month_year: {
+          userId: user.id,
+          month,
+          year,
+        },
+      },
+    });
+
+    if (!budget) {
+      return NextResponse.json({
+        budget: null,
+      });
+    }
+
+    return NextResponse.json({
+      budget: {
+        id: budget.id,
+        amount: Number(budget.amount),
+        month: budget.month,
+        year: budget.year,
+      },
+    });
+  } catch (error) {
+    console.error("Get budget error:", error);
+
+    return NextResponse.json(
+      { message: "Terjadi kesalahan pada server." },
+      { status: 500 }
+    );
+  }
+}
+
+// POST: membuat atau mengubah budget
+export async function POST(request: Request) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { message: "Unauthorized. Silakan login terlebih dahulu." },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+
+    const amount = Number(body.amount);
+    const month = Number(body.month);
+    const year = Number(body.year);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json(
+        { message: "Amount harus berupa angka lebih dari 0." },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isInteger(month) || month < 1 || month > 12) {
+      return NextResponse.json(
+        { message: "Month harus berupa angka 1 sampai 12." },
+        { status: 400 }
+      );
+    }
+
+    if (!Number.isInteger(year) || year < 2000) {
+      return NextResponse.json(
+        { message: "Year tidak valid." },
+        { status: 400 }
+      );
+    }
+
     const budget = await prisma.budget.upsert({
       where: {
         userId_month_year: {
@@ -81,19 +141,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // 7. Return response JSON
-    return NextResponse.json(
-      {
-        message: "Budget berhasil disimpan.",
-        budget: {
-          id: budget.id,
-          amount: budget.amount,
-          month: budget.month,
-          year: budget.year,
-        },
+    return NextResponse.json({
+      message: "Budget berhasil disimpan.",
+      budget: {
+        id: budget.id,
+        amount: Number(budget.amount),
+        month: budget.month,
+        year: budget.year,
       },
-      { status: 200 }
-    );
+    });
   } catch (error) {
     console.error("Set budget error:", error);
 

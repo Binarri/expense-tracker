@@ -1,11 +1,54 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 export default function SetBudgetForm() {
   const [amount, setAmount] = useState("");
   const [month, setMonth] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [existingBudget, setExistingBudget] = useState(false);
+
+  // Ambil budget ketika bulan dipilih
+  useEffect(() => {
+    if (!month) {
+      setAmount("");
+      setExistingBudget(false);
+      setMessage("");
+      return;
+    }
+
+    async function loadBudget() {
+      setMessage("");
+
+      const [year, selectedMonth] = month.split("-");
+
+      try {
+        const response = await fetch(
+          `/api/budgets?month=${selectedMonth}&year=${year}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setMessage(data.message || "Gagal mengambil budget.");
+          return;
+        }
+
+        if (data.budget) {
+          setAmount(String(data.budget.amount));
+          setExistingBudget(true);
+        } else {
+          setAmount("");
+          setExistingBudget(false);
+        }
+      } catch {
+        setMessage("Gagal mengambil budget.");
+      }
+    }
+
+    loadBudget();
+  }, [month]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -23,6 +66,8 @@ export default function SetBudgetForm() {
     }
 
     const [year, selectedMonth] = month.split("-");
+
+    setLoading(true);
 
     try {
       const response = await fetch("/api/budgets", {
@@ -44,10 +89,13 @@ export default function SetBudgetForm() {
         return;
       }
 
-      setMessage("Budget berhasil disimpan!");
-      setAmount("");
+      setAmount(String(data.budget.amount));
+      setExistingBudget(true);
+      setMessage("Budget berhasil disimpan.");
     } catch {
       setMessage("Terjadi kesalahan. Coba lagi.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -58,24 +106,6 @@ export default function SetBudgetForm() {
       </h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label
-            htmlFor="budget"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            Budget
-          </label>
-
-          <input
-            id="budget"
-            type="number"
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-            placeholder="Contoh: 1500000"
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
-          />
-        </div>
-
         <div>
           <label
             htmlFor="month"
@@ -93,11 +123,47 @@ export default function SetBudgetForm() {
           />
         </div>
 
+        {existingBudget && (
+          <div className="rounded-lg bg-indigo-50 border border-indigo-100 p-4">
+            <p className="text-sm text-gray-600">
+              Budget tersimpan untuk bulan ini:
+            </p>
+
+            <p className="text-xl font-bold text-indigo-600 mt-1">
+              Rp{Number(amount).toLocaleString("id-ID")}
+            </p>
+          </div>
+        )}
+
+        <div>
+          <label
+            htmlFor="budget"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            {existingBudget ? "Ubah Budget" : "Budget"}
+          </label>
+
+          <input
+            id="budget"
+            type="number"
+            min="1"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            placeholder="Contoh: 1500000"
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
+          />
+        </div>
+
         <button
           type="submit"
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition"
+          disabled={loading}
+          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold py-3 rounded-lg transition"
         >
-          Simpan Budget
+          {loading
+            ? "Menyimpan..."
+            : existingBudget
+              ? "Simpan Perubahan"
+              : "Simpan Budget"}
         </button>
       </form>
 
