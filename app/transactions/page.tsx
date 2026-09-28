@@ -28,6 +28,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   async function fetchTransactions() {
@@ -39,9 +40,17 @@ export default function TransactionsPage() {
         : `/api/transactions?type=${filter}`;
 
     const res = await fetch(url);
+
+    if (res.status === 401) {
+      window.location.href = "/login";
+      return;
+    }
+
     const data = await res.json();
 
-    setTransactions(data);
+    // API bisa balikin error object (mis. { error: "..." }) kalau gagal,
+    // bukan array transaksi — jangan disimpan ke state kalau begitu.
+    setTransactions(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
@@ -121,46 +130,61 @@ export default function TransactionsPage() {
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
+  const filterLabel = { all: "Semua", income: "Pemasukan", expense: "Pengeluaran" };
+
   return (
-    <div style={s.page}>
-      <div style={s.container}>
-        <h1 style={s.title}>Transaksi Keuangan</h1>
+    <main className="min-h-screen bg-gray-100 px-4 py-10">
+      <div className="w-full max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Transaksi Keuangan
+          </h1>
+          <a
+            href="/dashboard"
+            className="text-sm font-semibold text-indigo-600 hover:underline"
+          >
+            &larr; Dashboard
+          </a>
+        </div>
 
         {/* Ringkasan */}
-        <div style={s.summaryRow}>
-          <div style={{ ...s.summaryCard, borderColor: "#2e7d5b" }}>
-            <span style={s.summaryLabel}>Pemasukan</span>
-            <span style={{ ...s.summaryAmount, color: "#4ade80" }}>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl shadow-xl p-4 border-l-4 border-green-500">
+            <p className="text-gray-500 text-xs mb-1">Pemasukan</p>
+            <p className="text-green-600 font-bold text-sm">
               Rp{totalIncome.toLocaleString("id-ID")}
-            </span>
+            </p>
           </div>
 
-          <div style={{ ...s.summaryCard, borderColor: "#a33" }}>
-            <span style={s.summaryLabel}>Pengeluaran</span>
-            <span style={{ ...s.summaryAmount, color: "#f87171" }}>
+          <div className="bg-white rounded-2xl shadow-xl p-4 border-l-4 border-red-500">
+            <p className="text-gray-500 text-xs mb-1">Pengeluaran</p>
+            <p className="text-red-600 font-bold text-sm">
               Rp{totalExpense.toLocaleString("id-ID")}
-            </span>
+            </p>
           </div>
 
-          <div style={{ ...s.summaryCard, borderColor: "#3b5" }}>
-            <span style={s.summaryLabel}>Saldo</span>
-            <span style={s.summaryAmount}>
+          <div className="bg-white rounded-2xl shadow-xl p-4 border-l-4 border-indigo-500">
+            <p className="text-gray-500 text-xs mb-1">Saldo</p>
+            <p className="text-indigo-600 font-bold text-sm">
               Rp{(totalIncome - totalExpense).toLocaleString("id-ID")}
-            </span>
+            </p>
           </div>
         </div>
 
         {/* Form tambah transaksi */}
-        <form onSubmit={handleCreate} style={s.card}>
-          <h2 style={s.cardTitle}>Tambah Transaksi</h2>
+        <form
+          onSubmit={handleCreate}
+          className="bg-white rounded-2xl shadow-xl p-6"
+        >
+          <h2 className="text-sm font-semibold text-gray-500 mb-3">
+            Tambah Transaksi
+          </h2>
 
-          <div style={s.formRow}>
+          <div className="flex flex-wrap gap-2 items-center">
             <select
               value={type}
-              onChange={(e) =>
-                setType(e.target.value as "income" | "expense")
-              }
-              style={s.select}
+              onChange={(e) => setType(e.target.value as "income" | "expense")}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             >
               <option value="expense">Pengeluaran</option>
               <option value="income">Pemasukan</option>
@@ -171,7 +195,7 @@ export default function TransactionsPage() {
               placeholder="Nominal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              style={s.input}
+              className="flex-1 min-w-[100px] rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
               required
             />
 
@@ -180,368 +204,158 @@ export default function TransactionsPage() {
               placeholder="Deskripsi"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              style={{ ...s.input, flex: 2 }}
+              className="flex-[2] min-w-[140px] rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
             />
 
             <input
               type="date"
               value={transactionDate}
               onChange={(e) => setTransactionDate(e.target.value)}
-              style={s.input}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200"
               required
             />
 
-            <button type="submit" style={s.primaryButton}>
+            <button
+              type="submit"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition"
+            >
               Tambah
             </button>
           </div>
         </form>
 
         {/* Filter */}
-        <div style={s.filterRow}>
+        <div className="flex gap-2">
           {(["all", "income", "expense"] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              style={{
-                ...s.filterButton,
-                ...(filter === f ? s.filterButtonActive : {}),
-              }}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
+                filter === f
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+              }`}
             >
-              {f === "all"
-                ? "Semua"
-                : f === "income"
-                ? "Pemasukan"
-                : "Pengeluaran"}
+              {filterLabel[f]}
             </button>
           ))}
         </div>
 
         {/* List */}
-        {loading ? (
-          <p style={s.emptyText}>Memuat...</p>
-        ) : transactions.length === 0 ? (
-          <p style={s.emptyText}>Belum ada transaksi.</p>
-        ) : (
-          <div style={s.list}>
-            {transactions.map((t) =>
-              editingId === t.id ? (
-                <div key={t.id} style={{ ...s.card, ...s.editCard }}>
-                  <div style={s.formRow}>
-                    <select
-                      value={editType}
-                      onChange={(e) =>
-                        setEditType(e.target.value as "income" | "expense")
-                      }
-                      style={s.select}
-                    >
-                      <option value="expense">Pengeluaran</option>
-                      <option value="income">Pemasukan</option>
-                    </select>
+        <div className="bg-white rounded-2xl shadow-xl p-6">
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 text-sm">Memuat...</p>
+          ) : transactions.length === 0 ? (
+            <p className="text-center text-gray-400 py-8 text-sm">
+              Belum ada transaksi.
+            </p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {transactions.map((t) =>
+                editingId === t.id ? (
+                  <li key={t.id} className="py-3 first:pt-0 last:pb-0">
+                    <div className="flex flex-wrap gap-2 items-center bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+                      <select
+                        value={editType}
+                        onChange={(e) =>
+                          setEditType(e.target.value as "income" | "expense")
+                        }
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                      >
+                        <option value="expense">Pengeluaran</option>
+                        <option value="income">Pemasukan</option>
+                      </select>
 
-                    <input
-                      type="number"
-                      value={editAmount}
-                      onChange={(e) => setEditAmount(e.target.value)}
-                      style={s.input}
-                    />
+                      <input
+                        type="number"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="flex-1 min-w-[100px] rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                      />
 
-                    <input
-                      type="text"
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      style={{ ...s.input, flex: 2 }}
-                    />
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="flex-[2] min-w-[140px] rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                      />
 
-                    <input
-                      type="date"
-                      value={editDate}
-                      onChange={(e) => setEditDate(e.target.value)}
-                      style={s.input}
-                    />
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500"
+                      />
 
-                    <button
-                      onClick={() => handleUpdate(t.id)}
-                      style={s.primaryButton}
-                    >
-                      Simpan
-                    </button>
+                      <button
+                        onClick={() => handleUpdate(t.id)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-4 py-2 rounded-lg transition"
+                      >
+                        Simpan
+                      </button>
 
-                    <button
-                      onClick={cancelEdit}
-                      style={s.secondaryButton}
-                    >
-                      Batal
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div key={t.id} style={s.row}>
-                  <span
-                    style={{
-                      ...s.badge,
-                      backgroundColor:
-                        t.type === "income" ? "#14532d" : "#5b1a1a",
-                      color:
-                        t.type === "income" ? "#4ade80" : "#f87171",
-                    }}
+                      <button
+                        onClick={cancelEdit}
+                        className="border border-gray-300 text-gray-600 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  </li>
+                ) : (
+                  <li
+                    key={t.id}
+                    className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0"
                   >
-                    {t.type === "income" ? "Masuk" : "Keluar"}
-                  </span>
-
-                  <span style={s.rowDate}>
-                    {new Date(t.transactionDate).toLocaleDateString("id-ID")}
-                  </span>
-
-                  <span style={s.rowDesc}>{t.description}</span>
-
-                  <span
-                    style={{
-                      ...s.rowAmount,
-                      color:
-                        t.type === "income" ? "#4ade80" : "#f87171",
-                    }}
-                  >
-                    {t.type === "income" ? "+" : "-"}Rp
-                    {Number(t.amount).toLocaleString("id-ID")}
-                  </span>
-
-                  <div style={s.rowActions}>
-                    <button
-                      onClick={() => startEdit(t)}
-                      style={s.iconButton}
+                    <span
+                      className={`text-xs font-bold px-2 py-0.5 rounded shrink-0 ${
+                        t.type === "income"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
                     >
-                      Edit
-                    </button>
+                      {t.type === "income" ? "Masuk" : "Keluar"}
+                    </span>
 
-                    <button
-                      onClick={() => handleDelete(t.id)}
-                      style={s.iconButtonDanger}
+                    <span className="text-gray-400 text-xs shrink-0 min-w-[70px]">
+                      {new Date(t.transactionDate).toLocaleDateString("id-ID")}
+                    </span>
+
+                    <span className="text-gray-900 text-sm flex-1 min-w-[100px]">
+                      {t.description}
+                    </span>
+
+                    <span
+                      className={`font-bold text-sm shrink-0 ${
+                        t.type === "income" ? "text-green-600" : "text-red-600"
+                      }`}
                     >
-                      Hapus
-                    </button>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-        )}
+                      {t.type === "income" ? "+" : "-"}Rp
+                      {Number(t.amount).toLocaleString("id-ID")}
+                    </span>
+
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => startEdit(t)}
+                        className="text-xs border border-gray-300 text-gray-600 px-2.5 py-1 rounded-md hover:bg-gray-50 transition"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(t.id)}
+                        className="text-xs border border-red-200 text-red-600 px-2.5 py-1 rounded-md hover:bg-red-50 transition"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </li>
+                )
+              )}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
-
-const s: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    backgroundColor: "#0f0f10",
-    color: "#e5e5e5",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    padding: "32px 16px",
-  },
-
-  container: {
-    maxWidth: 720,
-    margin: "0 auto",
-  },
-
-  title: {
-    fontSize: 26,
-    fontWeight: 700,
-    marginBottom: 20,
-  },
-
-  summaryRow: {
-    display: "flex",
-    gap: 12,
-    marginBottom: 24,
-  },
-
-  summaryCard: {
-    flex: 1,
-    backgroundColor: "#18181b",
-    border: "1px solid #2a2a2e",
-    borderLeft: "3px solid",
-    borderRadius: 10,
-    padding: "14px 16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 4,
-  },
-
-  summaryLabel: {
-    fontSize: 12,
-    color: "#a1a1aa",
-  },
-
-  summaryAmount: {
-    fontSize: 18,
-    fontWeight: 700,
-  },
-
-  card: {
-    backgroundColor: "#18181b",
-    border: "1px solid #2a2a2e",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-
-  editCard: {
-    border: "1px solid #3b82f6",
-  },
-
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: 600,
-    marginBottom: 12,
-    color: "#a1a1aa",
-  },
-
-  formRow: {
-    display: "flex",
-    gap: 8,
-    flexWrap: "wrap",
-    alignItems: "center",
-  },
-
-  input: {
-    flex: 1,
-    minWidth: 100,
-    padding: "9px 10px",
-    borderRadius: 8,
-    border: "1px solid #2a2a2e",
-    backgroundColor: "#0f0f10",
-    color: "#e5e5e5",
-    fontSize: 14,
-    outline: "none",
-  },
-
-  select: {
-    padding: "9px 10px",
-    borderRadius: 8,
-    border: "1px solid #2a2a2e",
-    backgroundColor: "#0f0f10",
-    color: "#e5e5e5",
-    fontSize: 14,
-  },
-
-  primaryButton: {
-    padding: "9px 16px",
-    borderRadius: 8,
-    border: "none",
-    backgroundColor: "#3b82f6",
-    color: "#fff",
-    fontWeight: 600,
-    fontSize: 14,
-    cursor: "pointer",
-  },
-
-  secondaryButton: {
-    padding: "9px 16px",
-    borderRadius: 8,
-    border: "1px solid #2a2a2e",
-    backgroundColor: "transparent",
-    color: "#a1a1aa",
-    fontSize: 14,
-    cursor: "pointer",
-  },
-
-  filterRow: {
-    display: "flex",
-    gap: 8,
-    marginBottom: 16,
-  },
-
-  filterButton: {
-    padding: "7px 14px",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#2a2a2e",
-    backgroundColor: "transparent",
-    color: "#a1a1aa",
-    fontSize: 13,
-    cursor: "pointer",
-  },
-
-  filterButtonActive: {
-    backgroundColor: "#3b82f6",
-    color: "#fff",
-    borderColor: "#3b82f6",
-  },
-
-  list: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-
-  row: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#18181b",
-    border: "1px solid #2a2a2e",
-    borderRadius: 10,
-    padding: "12px 14px",
-  },
-
-  badge: {
-    fontSize: 11,
-    fontWeight: 700,
-    padding: "3px 8px",
-    borderRadius: 6,
-    flexShrink: 0,
-  },
-
-  rowDate: {
-    fontSize: 13,
-    color: "#a1a1aa",
-    flexShrink: 0,
-    minWidth: 70,
-  },
-
-  rowDesc: {
-    fontSize: 14,
-    flex: 1,
-  },
-
-  rowAmount: {
-    fontSize: 14,
-    fontWeight: 700,
-    flexShrink: 0,
-  },
-
-  rowActions: {
-    display: "flex",
-    gap: 6,
-    flexShrink: 0,
-  },
-
-  iconButton: {
-    padding: "5px 10px",
-    borderRadius: 6,
-    border: "1px solid #2a2a2e",
-    backgroundColor: "transparent",
-    color: "#a1a1aa",
-    fontSize: 12,
-    cursor: "pointer",
-  },
-
-  iconButtonDanger: {
-    padding: "5px 10px",
-    borderRadius: 6,
-    border: "1px solid #5b1a1a",
-    backgroundColor: "transparent",
-    color: "#f87171",
-    fontSize: 12,
-    cursor: "pointer",
-  },
-
-  emptyText: {
-    color: "#71717a",
-    textAlign: "center",
-    padding: "32px 0",
-  },
-};
