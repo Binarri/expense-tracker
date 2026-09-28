@@ -14,7 +14,16 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<"all" | "income" | "expense">("all");
   const [loading, setLoading] = useState(false);
+  const [budgetSummary, setBudgetSummary] = useState({
+    budget: 0,
+    totalExpense: 0,
+    remaining: 0,
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear(),
+    hasBudget: false,
+  });
 
+  const [budgetLoading, setBudgetLoading] = useState(false);
   const [type, setType] = useState<"income" | "expense">("expense");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -28,7 +37,7 @@ export default function TransactionsPage() {
 
   useEffect(() => {
     fetchTransactions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchBudgetSummary();
   }, [filter]);
 
   async function fetchTransactions() {
@@ -54,6 +63,34 @@ export default function TransactionsPage() {
     setLoading(false);
   }
 
+  async function fetchBudgetSummary() {
+    setBudgetLoading(true);
+
+    try {
+      const month = new Date().getMonth() + 1;
+      const year = new Date().getFullYear();
+
+      const res = await fetch(
+        `/api/budgets/summary?month=${month}&year=${year}`,
+        {
+          cache: "no-store",
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal mengambil budget");
+      }
+
+      setBudgetSummary(data);
+    } catch (error) {
+      console.error("Gagal mengambil budget summary:", error);
+    } finally {
+      setBudgetLoading(false);
+    }
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
@@ -72,10 +109,9 @@ export default function TransactionsPage() {
       setAmount("");
       setDescription("");
       setTransactionDate("");
-      fetchTransactions();
-    } else {
-      const err = await res.json();
-      alert(err.error);
+
+      await fetchTransactions();
+      await fetchBudgetSummary();
     }
   }
 
@@ -86,7 +122,10 @@ export default function TransactionsPage() {
       method: "DELETE",
     });
 
-    if (res.ok) fetchTransactions();
+    if (res.ok) {
+      await fetchTransactions();
+      await fetchBudgetSummary();
+    }
   }
 
   function startEdit(t: Transaction) {
@@ -115,10 +154,9 @@ export default function TransactionsPage() {
 
     if (res.ok) {
       setEditingId(null);
-      fetchTransactions();
-    } else {
-      const err = await res.json();
-      alert(err.error);
+
+      await fetchTransactions();
+      await fetchBudgetSummary();
     }
   }
 
@@ -133,6 +171,7 @@ export default function TransactionsPage() {
   const filterLabel = { all: "Semua", income: "Pemasukan", expense: "Pengeluaran" };
 
   return (
+
     <main className="min-h-screen bg-gray-100 px-4 py-10">
       <div className="w-full max-w-2xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -146,6 +185,67 @@ export default function TransactionsPage() {
             &larr; Dashboard
           </a>
         </div>
+        {/* Budget Summary */}
+        <div style={s.budgetCard}>
+          <div style={s.budgetHeader}>
+            <div>
+              <span style={s.summaryLabel}>Budget Bulan Ini</span>
+              <h2 style={s.budgetTitle}>
+                {budgetSummary.month}/{budgetSummary.year}
+              </h2>
+            </div>
+
+            {budgetSummary.hasBudget && (
+              <span style={s.budgetStatus}>
+                Aktif
+              </span>
+            )}
+          </div>
+
+          {budgetLoading ? (
+            <p style={s.emptyText}>Memuat budget...</p>
+          ) : !budgetSummary.hasBudget ? (
+            <p style={s.emptyText}>
+              Belum ada budget untuk bulan ini.
+            </p>
+          ) : (
+            <div style={s.budgetGrid}>
+              <div>
+                <span style={s.summaryLabel}>Anggaran</span>
+                <strong style={s.budgetAmount}>
+                  Rp{budgetSummary.budget.toLocaleString("id-ID")}
+                </strong>
+              </div>
+
+              <div>
+                <span style={s.summaryLabel}>Pengeluaran</span>
+                <strong style={{ ...s.budgetAmount, color: "#f87171" }}>
+                  Rp{budgetSummary.totalExpense.toLocaleString("id-ID")}
+                </strong>
+              </div>
+
+              <div>
+                <span style={s.summaryLabel}>Sisa Anggaran</span>
+                <strong
+                  style={{
+                    ...s.budgetAmount,
+                    color:
+                      budgetSummary.remaining >= 0
+                        ? "#4ade80"
+                        : "#f87171",
+                  }}
+                >
+                  Rp{budgetSummary.remaining.toLocaleString("id-ID")}
+                </strong>
+              </div>
+            </div>
+          )}
+        </div>
+
+    <div style={s.page}>
+      <div style={s.container}>
+        <h1 style={s.title}>Transaksi Keuangan</h1>
+        
 
         {/* Ringkasan */}
         <div className="grid grid-cols-3 gap-4">
