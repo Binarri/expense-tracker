@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LogoutButton from "./LogoutButton";
+import SetBudgetForm from "./SetBudgetForm";
 
 type RecentTransaction = {
   id: number;
@@ -100,8 +101,12 @@ export default function DashboardClient() {
           <LogoutButton />
         </div>
 
+        {/* Set Budget */}
+        <SetBudgetForm />
+
         {/* Summary Cards */}
         <div className="grid grid-cols-3 gap-4">
+          
           {/* Pemasukan */}
           <div className="bg-white rounded-2xl shadow-xl p-4 flex flex-col justify-between min-h-[104px]">
             <span className="text-green-600 text-xl">↑</span>
@@ -165,9 +170,8 @@ export default function DashboardClient() {
                   {/* Kiri: dot + info */}
                   <div className="flex items-center gap-3">
                     <span
-                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                        tx.type === "income" ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${tx.type === "income" ? "bg-green-500" : "bg-red-500"
+                        }`}
                     />
                     <div>
                       <p className="text-gray-900 font-medium text-sm">
@@ -185,9 +189,8 @@ export default function DashboardClient() {
                   {/* Kanan: nominal + type */}
                   <div className="text-right">
                     <p
-                      className={`font-bold text-sm ${
-                        tx.type === "income" ? "text-green-600" : "text-red-600"
-                      }`}
+                      className={`font-bold text-sm ${tx.type === "income" ? "text-green-600" : "text-red-600"
+                        }`}
                     >
                       {tx.type === "income" ? "+" : "-"}
                       {formatRupiah(tx.amount)}
