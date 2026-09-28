@@ -12,10 +12,11 @@ model User {
   name         String
   email        String        @unique
   password     String
-  sessions     Session[]
-  transactions Transaction[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  sessions     Session[]
+  transactions Transaction[]
+  budgets      Budget[]
 }
 
 model Session {
@@ -23,8 +24,7 @@ model Session {
   userId    Int
   expiresAt DateTime
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {
@@ -36,9 +36,23 @@ model Transaction {
   transactionDate DateTime
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, type])
+}
+
+model Budget {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  amount    Decimal
+  month     Int
+  year      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year])
+  @@index([userId])
 }
