@@ -74,6 +74,20 @@ async function main() {
     ],
   });
 
+  // Budget bulan September 2026 buat demo Budget Indicator (SRS-009)
+  await prisma.budget.upsert({
+    where: {
+      userId_month_year: { userId: user.id, month: 9, year: 2026 },
+    },
+    update: { amount: 2000000 },
+    create: {
+      userId: user.id,
+      amount: 2000000,
+      month: 9,
+      year: 2026,
+    },
+  });
+
   console.log("Seed selesai.");
   console.log(`User: ${email} / password: ${password}`);
 }

@@ -141,13 +141,22 @@ export default function DashboardClient() {
           </div>
         </div>
 
-        {/* Tombol transaksi */}
-        <a
-          href="/transactions"
-          className="block text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition"
-        >
-          + Tambah / Kelola Transaksi
-        </a>
+        {/* Tombol navigasi */}
+        <div className="grid grid-cols-2 gap-3">
+          <a
+            href="/transactions"
+            className="block text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition"
+          >
+            Transaksi
+          </a>
+
+          <a
+            href="/budget"
+            className="block text-center bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-semibold py-3 rounded-lg transition"
+          >
+            Budget
+          </a>
+        </div>
 
         {/* Transaksi Terbaru */}
         <div className="bg-white rounded-2xl shadow-xl p-6">
